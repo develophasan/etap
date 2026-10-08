@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#0f131a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Tahta Kumanda</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Üst çubuk -->
+    <header class="topbar">
+      <div class="brand">
+        <span id="dot" class="dot" aria-hidden="true"></span>
+        <div>
+          <div class="title">Tahta Kumanda</div>
+          <div id="statusText" class="subtitle">Bağlanıyor…</div>
+        </div>
+      </div>
+      <button id="btnSettings" class="icon-btn" aria-label="Ayarlar">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>
+      </button>
+    </header>
+
+    <!-- Uyarı şeridi (sunucudan gelen hatalar) -->
+    <div id="banner" class="banner" hidden></div>
+
+    <!-- Trackpad -->
+    <main class="pad-wrap">
+      <div id="pad" class="pad" aria-label="Dokunmatik fare alanı">
+        <div class="pad-hint" id="padHint">
+          <b>Tek parmak</b> kaydır: imleç &nbsp;·&nbsp; <b>Dokun</b>: tıkla<br>
+          <b>İki parmak</b>: kaydır &nbsp;·&nbsp; <b>İki parmakla dokun</b>: sağ tık<br>
+          <b>İki kez dokun ve sürükle</b>: tut-sürükle
+        </div>
+        <div id="scrollStrip" class="scroll-strip" aria-hidden="true"><span></span></div>
+      </div>
+      <div class="mouse-btns">
+        <button id="btnL" class="mbtn">Sol</button>
+        <button id="btnM" class="mbtn mid" aria-label="Orta tık">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2a6 6 0 0 0-6 6v8a6 6 0 0 0 12 0V8a6 6 0 0 0-6-6Zm1 7h-2V5h2Z"/></svg>
+        </button>
+        <button id="btnR" class="mbtn">Sağ</button>
+      </div>
+    </main>
+
+    <!-- Alt menü -->
+    <nav class="dock">
+      <button id="btnKeyboard" class="dock-btn">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M20 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm-9 3h2v2h-2Zm0 3h2v2h-2ZM8 8h2v2H8Zm0 3h2v2H8Zm-1 2H5v-2h2Zm0-3H5V8h2Zm9 7H8v-2h8Zm0-4h-2v-2h2Zm0-3h-2V8h2Zm3 3h-2v-2h2Zm0-3h-2V8h2Z"/></svg>
+        <span>Klavye</span>
+      </button>
+      <button id="btnPresent" class="dock-btn">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21 3H3v2h1v9a2 2 0 0 0 2 2h4.6l-2.3 4.3 1.8.9L12.6 16h-1.2l2.5 5.2 1.8-.9-2.3-4.3H18a2 2 0 0 0 2-2V5h1Zm-3 11H6V5h12Zm-8-7v6l5-3Z"/></svg>
+        <span>Sunum</span>
+      </button>
+      <button id="btnCast" class="dock-btn accent">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2ZM1 18v3h3a3 3 0 0 0-3-3Zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7Zm0-4v2a9 9 0 0 1 9 9h2A11 11 0 0 0 1 10Z"/></svg>
+        <span>Ekranımı Yansıt</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Gizli metin alanı: telefon klavyesini açmak için -->
+  <textarea id="kbInput" class="kb-input" autocomplete="off" autocorrect="off"
+            autocapitalize="off" spellcheck="false" enterkeyhint="enter" aria-label="Klavye girişi"></textarea>
+
+  <!-- Klavye açıkken görünen özel tuşlar -->
+  <div id="keybar" class="keybar" hidden>
+    <div class="keybar-row">
+      <button data-key="esc">Esc</button>
+      <button data-key="tab">Tab</button>
+      <button data-combo="ctrl,c">Kopyala</button>
+      <button data-combo="ctrl,v">Yapıştır</button>
+      <button data-combo="ctrl,z">Geri al</button>
+      <button data-combo="ctrl,a">Tümü</button>
+      <button data-key="delete">Del</button>
+      <button data-key="home">Home</button>
+      <button data-key="end">End</button>
+      <button data-key="super">⊞</button>
+      <button data-combo="alt,tab">Alt+Tab</button>
+      <button data-combo="alt,f4">Kapat</button>
+    </div>
+    <div class="keybar-row arrows">
+      <button data-key="left">←</button>
+      <button data-key="up">↑</button>
+      <button data-key="down">↓</button>
+      <button data-key="right">→</button>
+      <button data-key="backspace">⌫</button>
+      <button data-key="enter" class="enter">Enter ⏎</button>
+      <button id="kbClose" class="close">Kapat ✕</button>
+    </div>
+  </div>
+
+  <!-- Alt paneller -->
+  <div id="backdrop" class="backdrop" hidden></div>
+
+  <section id="sheetPresent" class="sheet" hidden aria-label="Sunum kontrolü">
+    <div class="sheet-handle"></div>
+    <h2>Sunum Kumandası</h2>
+    <div class="present-grid">
+      <button class="big" data-key="pageup">◀<small>Önceki</small></button>
+      <button class="big primary" data-key="pagedown">▶<small>Sonraki</small></button>
+      <button data-key="f5">F5<small>Baştan başlat</small></button>
+      <button data-combo="shift,f5">⇧F5<small>Bu slayttan</small></button>
+      <button data-combo="b">■<small>Siyah ekran</small></button>
+      <button data-key="esc">Esc<small>Sunumu bitir</small></button>
+      <button data-key="voldown">🔉<small>Ses −</small></button>
+      <button data-key="volup">🔊<small>Ses +</small></button>
+    </div>
+    <p class="muted">LibreOffice Impress, PowerPoint, PDF görüntüleyiciler ve tarayıcıda çalışır.</p>
+  </section>
+
+  <section id="sheetCast" class="sheet" hidden aria-label="Ekran yansıtma">
+    <div class="sheet-handle"></div>
+    <h2>Ekranımı Yansıt</h2>
+    <div class="tabs" role="tablist">
+      <button class="tab" data-tab="ios" role="tab">iPhone / iPad</button>
+      <button class="tab" data-tab="android" role="tab">Android</button>
+    </div>
+
+    <div class="tab-body" data-body="ios">
+      <div id="airplayState" class="state">Durum alınıyor…</div>
+      <ol class="steps">
+        <li>Telefon ile tahta <b>aynı Wi-Fi</b> ağında olsun.</li>
+        <li>Sağ üst köşeden aşağı kaydırıp <b>Denetim Merkezi</b>'ni açın.</li>
+        <li><b>Ekran Yansıtma</b> (iki dikdörtgen simgesi) düğmesine dokunun.</li>
+        <li>Listeden <b id="airplayName">Akıllı Tahta</b>'yı seçin. Görüntü tahtada tam ekran açılır.</li>
+        <li>Bitirmek için aynı menüden <b>Yansıtmayı Durdur</b>'a basın.</li>
+      </ol>
+      <button id="btnAirplayRestart" class="wide ghost">AirPlay alıcısını yeniden başlat</button>
+    </div>
+
+    <div class="tab-body" data-body="android" hidden>
+      <div id="androidState" class="state">Durum alınıyor…</div>
+
+      <details id="pairBox" class="card">
+        <summary><b>1. Adım – İlk kez eşleştirme</b> <span class="muted">(telefon başına bir kez)</span></summary>
+        <ol class="steps small">
+          <li>Ayarlar → Telefon hakkında → <b>Yapım numarası</b>'na 7 kez dokunun (Geliştirici seçenekleri açılır).</li>
+          <li>Ayarlar → Sistem → <b>Geliştirici seçenekleri</b> → <b>Kablosuz hata ayıklama</b>'yı açın.</li>
+          <li><b>Ekranı bölün</b> (Chrome + Ayarlar yan yana); çünkü uygulama değiştirince eşleştirme penceresi kapanır.</li>
+          <li><b>"Eşleştirme kodu ile cihaz eşleştir"</b>e dokunun; çıkan 6 haneli kodu ve <b>port</b>u (iki noktadan sonraki sayı) aşağıya yazın.</li>
+        </ol>
+        <div class="row">
+          <label>Eşleştirme portu<input id="pairPort" inputmode="numeric" pattern="[0-9]*" placeholder="ör. 37215"></label>
+          <label>6 haneli kod<input id="pairCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="ör. 482913"></label>
+        </div>
+        <button id="btnPair" class="wide">Eşleştir</button>
+      </details>
+
+      <div class="card">
+        <b>2. Adım – Yansıtma</b>
+        <p class="muted small">Kablosuz hata ayıklama açıkken basın. Port boş bırakılırsa telefon otomatik bulunur.
+          Bulunamazsa Kablosuz hata ayıklama ekranındaki <i>IP adresi ve bağlantı noktası</i> satırındaki portu yazın.</p>
+        <label>Bağlantı portu (isteğe bağlı)<input id="connPort" inputmode="numeric" pattern="[0-9]*" placeholder="otomatik"></label>
+        <div class="row">
+          <button id="btnConnect" class="wide primary">Yansıtmayı Başlat</button>
+          <button id="btnStopAndroid" class="wide ghost">Durdur</button>
+        </div>
+        <p class="muted small">İpucu: Yansıtma açıkken tahtadaki görüntüye dokunarak telefonu tahtadan da kullanabilirsiniz.</p>
+      </div>
+    </div>
+    <div id="castMsg" class="msg" hidden></div>
+  </section>
+
+  <section id="sheetSettings" class="sheet" hidden aria-label="Ayarlar">
+    <div class="sheet-handle"></div>
+    <h2>Ayarlar</h2>
+    <label class="slider">İmleç hızı <output id="sensOut"></output>
+      <input id="sens" type="range" min="0.5" max="5" step="0.1">
+    </label>
+    <label class="slider">Kaydırma hızı <output id="scrollOut"></output>
+      <input id="scrollSpeed" type="range" min="0.3" max="4" step="0.1">
+    </label>
+    <label class="switch"><input id="natural" type="checkbox"> Doğal kaydırma (telefon gibi)</label>
+    <label class="switch"><input id="haptic" type="checkbox"> Tıklamada titreşim</label>
+    <label class="switch"><input id="tapClick" type="checkbox"> Dokunarak tıklama</label>
+    <div class="info" id="serverInfo"></div>
+    <button id="btnLogout" class="wide ghost">PIN'i unut / çıkış</button>
+  </section>
+
+  <!-- PIN ekranı -->
+  <div id="pinOverlay" class="overlay" hidden>
+    <form id="pinForm" class="pin-card">
+      <h1>Tahta Kumanda</h1>
+      <p>Tahtada görünen <b>PIN</b> kodunu girin.</p>
+      <input id="pinInput" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="12" placeholder="••••">
+      <button type="submit" class="wide primary">Bağlan</button>
+      <p id="pinErr" class="err" hidden></p>
+      <p class="muted small">PIN'i görmüyorsanız tahtada "Tahta Kumanda Bilgi" kısayolunu açın.</p>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
