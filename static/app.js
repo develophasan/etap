@@ -383,6 +383,7 @@
     $(id).hidden = false; backdrop.hidden = false; openSheetId = id;
     if (id === "#sheetCast") { refreshCast(); castPoll = setInterval(refreshCast, 3000); }
     if (id === "#sheetSettings") refreshInfo();
+    if (id === "#sheetFiles") { refreshFiles(); setBadge(0); }
   }
   function closeSheets() {
     $$(".sheet").forEach((s) => { s.hidden = true; });
@@ -394,6 +395,7 @@
 
   $("#btnPresent").addEventListener("click", () => openSheet("#sheetPresent"));
   $("#btnCast").addEventListener("click", () => openSheet("#sheetCast"));
+  $("#btnFiles").addEventListener("click", () => openSheet("#sheetFiles"));
   $("#btnSettings").addEventListener("click", () => openSheet("#sheetSettings"));
   bindKeyButtons($("#sheetPresent"));
 
@@ -457,6 +459,176 @@
     castMsg(r.message, r.ok);
   }));
 
+  // ------------------------------------------------------- dosya aktarımı
+  const fileInput = $("#fileInput");
+  const uploadList = $("#uploadList");
+  const queue = [];
+  let uploading = null, doneCount = 0;
+
+  settings.openAfter = store.get("openAfter", false);
+  $("#openAfter").checked = settings.openAfter;
+  $("#openAfter").addEventListener("change", (e) => { settings.openAfter = e.target.checked; store.set("openAfter", settings.openAfter); });
+
+  function fmtSize(n) {
+    if (n < 1024) return n + " B";
+    const u = ["KB", "MB", "GB"]; let i = -1;
+    do { n /= 1024; i++; } while (n >= 1024 && i < u.length - 1);
+    return (n < 10 ? n.toFixed(1) : Math.round(n)) + " " + u[i];
+  }
+  function fmtTime(sec) {
+    const d = new Date(sec * 1000), now = new Date();
+    const hm = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === now.toDateString()) return "Bugün " + hm;
+    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) + " " + hm;
+  }
+  function kind(name) {
+    const ext = (name.split(".").pop() || "").toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "svg"].includes(ext)) return ["img", ext];
+    if (["mp4", "mov", "mkv", "avi", "webm", "3gp", "mp3", "m4a", "wav", "ogg"].includes(ext)) return ["vid", ext];
+    if (["pdf", "doc", "docx", "odt", "ppt", "pptx", "odp", "xls", "xlsx", "ods", "txt"].includes(ext)) return ["doc", ext];
+    return ["", ext.slice(0, 4) || "?"];
+  }
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function setBadge(n) {
+    doneCount = n;
+    const b = $("#filesBadge");
+    b.textContent = n; b.hidden = !n;
+  }
+
+  $("#btnPick").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    for (const f of fileInput.files) addUpload(f);
+    fileInput.value = "";
+    pump();
+  });
+
+  function addUpload(file) {
+    const li = el("li");
+    const top = el("div", "up-top");
+    const name = el("span", "up-name", file.name);
+    const pct = el("span", "up-pct", fmtSize(file.size));
+    const x = el("button", "up-x", "✕");
+    x.setAttribute("aria-label", "İptal");
+    top.append(name, pct, x);
+    const bar = el("div", "bar"); const fill = el("i"); bar.append(fill);
+    const msg = el("div", "up-msg", "Sırada");
+    li.append(top, bar, msg);
+    uploadList.prepend(li);
+    const job = { file, li, fill, pct, msg, xhr: null, state: "queued" };
+    x.addEventListener("click", () => {
+      if (job.state === "queued") { job.state = "cancelled"; li.remove(); }
+      else if (job.state === "uploading" && job.xhr) job.xhr.abort();
+      else li.remove();
+    });
+    queue.push(job);
+  }
+
+  function finish(job, ok, text) {
+    job.state = ok ? "done" : "fail";
+    job.li.classList.add(ok ? "done" : "fail");
+    job.msg.textContent = text;
+    if (ok) { job.fill.style.width = "100%"; job.pct.textContent = fmtSize(job.file.size); }
+    uploading = null;
+    pump();
+  }
+
+  function pump() {
+    if (uploading) return;
+    const job = queue.shift();
+    if (!job) { refreshFiles(); return; }
+    if (job.state === "cancelled") { pump(); return; }
+    uploading = job;
+    job.state = "uploading";
+    const xhr = new XMLHttpRequest();
+    job.xhr = xhr;
+    const q = `name=${encodeURIComponent(job.file.name)}&open=${settings.openAfter ? 1 : 0}`;
+    xhr.open("PUT", "/api/files/upload?" + q);
+    xhr.setRequestHeader("X-Pin", pin);
+    xhr.setRequestHeader("Content-Type", "application/octet-stream");
+    const t0 = performance.now();
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      const p = e.loaded / e.total;
+      job.fill.style.width = (p * 100).toFixed(1) + "%";
+      job.pct.textContent = Math.floor(p * 100) + "%";
+      const secs = (performance.now() - t0) / 1000;
+      if (secs > 0.5) {
+        const rate = e.loaded / secs;
+        const left = (e.total - e.loaded) / Math.max(rate, 1);
+        job.msg.textContent = `${fmtSize(rate)}/sn · ${left < 60 ? Math.ceil(left) + " sn" : Math.ceil(left / 60) + " dk"} kaldı`;
+      } else job.msg.textContent = "Gönderiliyor…";
+    };
+    xhr.onload = () => {
+      let d = {};
+      try { d = JSON.parse(xhr.responseText); } catch { /* boş */ }
+      if (xhr.status === 401) { finish(job, false, "PIN hatalı"); showPin(d.message); return; }
+      if (xhr.status === 200 && d.ok) {
+        finish(job, true, (settings.openAfter ? "Gönderildi, tahtada açılıyor: " : "Tahtaya gönderildi: ") + d.name);
+        buzz(15);
+        if (openSheetId !== "#sheetFiles") setBadge(doneCount + 1);
+      } else finish(job, false, d.message || "Gönderilemedi");
+    };
+    xhr.onerror = () => finish(job, false, "Bağlantı koptu");
+    xhr.onabort = () => finish(job, false, "İptal edildi");
+    xhr.send(job.file);
+  }
+
+  window.addEventListener("beforeunload", (e) => {
+    if (uploading || queue.length) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  async function refreshFiles() {
+    const list = $("#fileList");
+    let d;
+    try { d = await api("/api/files"); } catch { return; }
+    if (!d.ok) { $("#filesInfo").textContent = d.message || ""; return; }
+    list.textContent = "";
+    if (!d.files.length) list.append(el("li", "empty", "Henüz dosya yok. Tahtadaki klasöre konan dosyalar da burada görünür."));
+    for (const f of d.files) list.append(fileRow(f));
+    $("#filesInfo").textContent = `Tahtadaki klasör: ${d.dir} · Boş yer: ${fmtSize(d.free)}`;
+  }
+
+  function fileRow(f) {
+    const li = el("li");
+    const [k, ext] = kind(f.name);
+    const ico = el("div", "f-ico " + k, ext);
+    const main = el("div", "f-main");
+    main.append(el("div", "f-name", f.name), el("div", "f-meta", `${fmtSize(f.size)} · ${fmtTime(f.mtime)}`));
+    const act = el("div", "f-act");
+    const open = el("button", "", "Aç");
+    open.title = "Tahtada aç";
+    open.addEventListener("click", async () => {
+      try { const r = await api("/api/files/open", { name: f.name }); toast(r.ok ? "Tahtada açılıyor" : r.message); } catch { /* yok */ }
+    });
+    const dl = el("a", "", "İndir");
+    dl.href = `/api/files/download/${encodeURIComponent(f.name)}?pin=${encodeURIComponent(pin)}`;
+    dl.setAttribute("download", f.name);
+    const del = el("button", "del", "Sil");
+    let armed = 0;
+    del.addEventListener("click", async () => {
+      if (!armed) {
+        del.classList.add("confirm"); del.textContent = "Emin mi?";
+        armed = setTimeout(() => { armed = 0; del.classList.remove("confirm"); del.textContent = "Sil"; }, 3000);
+        return;
+      }
+      clearTimeout(armed);
+      try { const r = await api("/api/files/delete", { name: f.name }); if (r.ok) li.remove(); else toast(r.message); } catch { /* yok */ }
+    });
+    act.append(open, dl, del);
+    li.append(ico, main, act);
+    return li;
+  }
+
+  $("#btnRefreshFiles").addEventListener("click", refreshFiles);
+  $("#btnOpenFolder").addEventListener("click", async () => {
+    try { const r = await api("/api/files/open", {}); toast(r.ok ? "Klasör tahtada açılıyor" : r.message); } catch { /* yok */ }
+  });
+
   // ---------------------------------------------------------- ayarlar
   function bindSlider(id, key, fmt) {
     const el = $("#" + id), out = $("#" + fmt);
@@ -471,6 +643,9 @@
   ["natural", "haptic", "tapClick"].forEach((k) => {
     const el = $("#" + k); el.checked = settings[k];
     el.addEventListener("change", () => { settings[k] = el.checked; store.set(k, el.checked); });
+  });
+  $("#btnShowPanel").addEventListener("click", async () => {
+    try { await api("/api/panel/show", {}); toast("Panel tahtada gösteriliyor"); closeSheets(); } catch { /* yok */ }
   });
   $("#btnLogout").addEventListener("click", () => {
     store.del("pin"); pin = ""; if (ws) { authFailed = true; ws.close(); } closeSheets(); showPin();

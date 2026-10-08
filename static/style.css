@@ -90,11 +90,16 @@ body.kb-open .mouse-btns { height: 46px; }
 .mbtn.mid { color: var(--muted); }
 
 /* Alt menü */
-.dock { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; }
+.dock { display: grid; grid-template-columns: 1fr 1fr 1fr 1.3fr; gap: 6px; }
 .dock-btn {
+  position: relative; min-width: 0; padding: 0 2px; text-align: center; line-height: 1.15;
   height: 62px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  font-size: 12.5px; font-weight: 600;
+  font-size: 12px; font-weight: 600;
+}
+.badge {
+  position: absolute; top: 6px; right: 10px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--ok); color: #06210f; font: 700 11px/18px system-ui, sans-serif; font-style: normal;
 }
 .dock-btn.accent { background: linear-gradient(180deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; }
 .dock-btn.on { border-color: var(--accent); color: var(--accent); }
@@ -206,3 +211,61 @@ label input:not([type]), label input[inputmode] {
   #app { max-width: 720px; margin: 0 auto; }
   .sheet { max-width: 720px; margin: 0 auto; }
 }
+
+/* Dosya aktarımı */
+.pick {
+  width: 100%; display: flex; align-items: center; gap: 14px; text-align: left;
+  padding: 16px; border-radius: 16px; border: 1.5px dashed #3fa2ff88;
+  background: linear-gradient(180deg, #17283b, #142131); color: var(--text);
+}
+.pick svg { flex: 0 0 auto; color: var(--accent); }
+.pick b { display: block; font-size: 16px; }
+.pick small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.pick:active { filter: brightness(1.2); }
+
+.uploads, .files { list-style: none; margin: 0; padding: 0; }
+.uploads li {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 8px;
+}
+.up-top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.up-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-pct { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.up-x { border: 0; background: none; color: var(--muted); font-size: 18px; width: 28px; height: 28px; }
+.bar { height: 6px; border-radius: 3px; background: var(--panel-2); margin-top: 8px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .15s; }
+.uploads li.done .bar i { background: var(--ok); }
+.uploads li.fail .bar i { background: var(--err); }
+.up-msg { font-size: 12px; margin-top: 6px; color: var(--muted); }
+.uploads li.done .up-msg { color: var(--ok); }
+.uploads li.fail .up-msg { color: var(--err); }
+
+.files-head { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 6px; }
+.mini {
+  height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel-2); font-size: 13px; font-weight: 600; margin-left: 6px;
+}
+.files li {
+  display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+.files li:last-child { border-bottom: 0; }
+.f-ico {
+  flex: 0 0 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--panel-2); font: 700 10.5px/1 system-ui, sans-serif; color: var(--muted); text-transform: uppercase;
+}
+.f-ico.img { background: #24324a; color: #8fc3ff; }
+.f-ico.vid { background: #3a2540; color: #e3a3ff; }
+.f-ico.doc { background: #3d2a1c; color: #ffbe86; }
+.f-main { flex: 1; min-width: 0; }
+.f-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-meta { font-size: 12px; color: var(--muted); }
+.f-act { display: flex; gap: 4px; }
+.f-act button, .f-act a {
+  height: 34px; min-width: 40px; padding: 0 9px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--panel-2); font-size: 12.5px; font-weight: 600; color: var(--text);
+  display: grid; place-items: center; text-decoration: none;
+}
+.f-act .del.confirm { background: var(--err); border-color: var(--err); color: #fff; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 14px 0; text-align: center; }
+
+.copy { text-align: center; font-size: 12px; color: var(--muted); margin: 18px 0 0; -webkit-user-select: none; user-select: none; }
+.copy a { color: var(--accent); text-decoration: none; font-weight: 600; }

@@ -23,7 +23,10 @@ sudo apt-get update
 REQUIRED=(
   python3 python3-venv python3-pip
   python3-evdev            # uinput ile sanal fare/klavye
-  python3-fastapi python3-uvicorn python3-websockets   # internet yoksa bile çalışsın
+  python3-starlette python3-uvicorn python3-websockets # internet yoksa bile çalışsın
+  python3-gi gir1.2-gtk-3.0  # masaüstü paneli
+  qrencode                  # panelde QR kod
+  xdg-utils xdg-user-dirs   # dosyaları tahtada açma, Masaüstü klasörünü bulma
   avahi-daemon libnss-mdns # AirPlay/mDNS keşfi
   curl unzip iproute2 libnotify-bin
 )
@@ -34,6 +37,7 @@ OPTIONAL=(
   gstreamer1.0-libav gstreamer1.0-gl gstreamer1.0-x
   gstreamer1.0-vaapi       # Intel/AMD donanımsal video çözme (varsa)
   xdotool                  # X11'de klavye düzeninde olmayan karakterler için yedek
+  gir1.2-ayatanaappindicator3-0.1   # panel için sistem tepsisi simgesi
 )
 sudo apt-get install -y "${REQUIRED[@]}"
 for p in "${OPTIONAL[@]}"; do
@@ -75,9 +79,9 @@ fi
 say "4/7 Python sanal ortamı hazırlanıyor"
 python3 -m venv --system-site-packages "$DIR/.venv"
 if ! "$DIR/.venv/bin/pip" install --upgrade -q -r "$DIR/requirements.txt"; then
-  warn "pip ile güncellenemedi (internet yok?). Depodaki FastAPI/Uvicorn kullanılacak."
+  warn "pip ile güncellenemedi (internet yok?). Depodaki Starlette/Uvicorn kullanılacak."
 fi
-"$DIR/.venv/bin/python" -c "import fastapi, uvicorn, evdev; print('  fastapi', fastapi.__version__, '| uvicorn', uvicorn.__version__)"
+"$DIR/.venv/bin/python" -c "import starlette, uvicorn, evdev; print('  starlette', starlette.__version__, '| uvicorn', uvicorn.__version__)"
 
 # -------------------------------------------------- 5) mDNS ve güvenlik duvarı
 say "5/7 Avahi (mDNS) ve güvenlik duvarı"
@@ -94,7 +98,7 @@ fi
 
 # ---------------------------------------------- 6) Otomatik başlatma + kısayollar
 say "6/7 Oturum açılınca otomatik başlatma ayarlanıyor"
-chmod +x "$DIR/start.sh" "$DIR/bilgi.sh"
+chmod +x "$DIR/start.sh" "$DIR/bilgi.sh" "$DIR/panel.sh"
 [[ -f "$DIR/ayarlar.env" ]] || cp "$DIR/ayarlar.env.ornek" "$DIR/ayarlar.env"
 mkdir -p "$HOME/.config/autostart" "$HOME/.local/share/applications"
 
@@ -102,25 +106,34 @@ cat > "$HOME/.config/autostart/tahta-kumanda.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Tahta Kumanda
-Comment=Telefondan fare/klavye ve ekran yansıtma sunucusu
-Exec="$DIR/start.sh"
+Comment=Telefondan fare/klavye, ekran yansıtma ve dosya aktarımı
+Exec="$DIR/panel.sh"
 Icon=input-tablet
 Terminal=false
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=5
 EOF
 
-cat > "$HOME/.local/share/applications/tahta-kumanda-bilgi.desktop" <<EOF
+rm -f "$HOME/.local/share/applications/tahta-kumanda-bilgi.desktop"   # eski sürümün kısayolu
+cat > "$HOME/.local/share/applications/tahta-kumanda.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Tahta Kumanda Bilgi
-Comment=Telefondan bağlanmak için adres ve PIN
-Exec="$DIR/bilgi.sh"
+Name=Tahta Kumanda
+Comment=Telefondan bağlanmak için adres, PIN ve Wi-Fi bilgisini gösteren panel
+Exec="$DIR/panel.sh"
 Icon=input-tablet
 Terminal=false
 Categories=Education;Utility;
+StartupNotify=false
 EOF
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications" || true
+
+# Eski sürüm çalışıyorsa durdur, yeni paneli hemen başlat
+pkill -f 'python[0-9.]* -m uvicorn app\.main:app' 2>/dev/null || true
+sleep 1
+if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+  setsid -f "$DIR/panel.sh" >/dev/null 2>&1 || true
+fi
 
 # ---------------------------------------------------------------- 7) Bitti
 say "7/7 Kurulum tamamlandı"
@@ -128,9 +141,10 @@ cat <<EOF
 
   • ÖNEMLİ: uinput izninin kesin uygulanması için oturumu bir kez kapatıp açın
     (veya tahtayı yeniden başlatın).
-  • Sunucu her oturum açılışında otomatik başlar. Elle başlatmak için:
-        $DIR/start.sh
-  • Uygulama menüsündeki "Tahta Kumanda Bilgi" kısayolu adresi ve PIN'i tahtada büyük gösterir.
-  • Ayarlar (klavye düzeni, AirPlay adı, PIN): $DIR/ayarlar.env
+  • Her oturum açılışında "Tahta Kumanda" paneli açılır (adres, PIN, Wi-Fi, QR kod)
+    ve sunucuyu kendisi başlatır. "Gizle" ile kapatıp uygulama menüsünden
+    "Tahta Kumanda" ile yeniden açabilirsiniz.
+  • Telefondan gönderilen dosyalar: Masaüstü/Telefondan Gelenler
+  • Ayarlar (klavye düzeni, AirPlay adı, PIN, dosya klasörü): $DIR/ayarlar.env
 
 EOF

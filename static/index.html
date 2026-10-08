@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Tahta Kumanda</title>
-  <link rel="stylesheet" href="/static/style.css?v=2">
+  <link rel="stylesheet" href="/static/style.css?v=4">
 </head>
 <body>
   <div id="app">
@@ -57,6 +57,11 @@
       <button id="btnPresent" class="dock-btn">
         <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21 3H3v2h1v9a2 2 0 0 0 2 2h4.6l-2.3 4.3 1.8.9L12.6 16h-1.2l2.5 5.2 1.8-.9-2.3-4.3H18a2 2 0 0 0 2-2V5h1Zm-3 11H6V5h12Zm-8-7v6l5-3Z"/></svg>
         <span>Sunum</span>
+      </button>
+      <button id="btnFiles" class="dock-btn">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8Zm2 5 4 4h-3v4h-2v-4H8Z"/></svg>
+        <span>Dosyalar</span>
+        <i id="filesBadge" class="badge" hidden></i>
       </button>
       <button id="btnCast" class="dock-btn accent">
         <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21 3H3a2 2 0 0 0-2 2v3h2V5h18v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2ZM1 18v3h3a3 3 0 0 0-3-3Zm0-4v2a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7Zm0-4v2a9 9 0 0 1 9 9h2A11 11 0 0 0 1 10Z"/></svg>
@@ -168,6 +173,30 @@
     <div id="castMsg" class="msg" hidden></div>
   </section>
 
+  <section id="sheetFiles" class="sheet" hidden aria-label="Dosya aktarımı">
+    <div class="sheet-handle"></div>
+    <h2>Dosya Aktarımı</h2>
+
+    <input id="fileInput" type="file" multiple hidden>
+    <button id="btnPick" class="pick">
+      <svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M11 16V7.8l-3.6 3.6L6 10l6-6 6 6-1.4 1.4L13 7.8V16Zm-7 4v-5h2v3h12v-3h2v5Z"/></svg>
+      <span><b>Telefondan tahtaya gönder</b><small>Fotoğraf, video, PDF, sunum… birden fazla seçebilirsiniz</small></span>
+    </button>
+    <label class="switch"><input id="openAfter" type="checkbox"> Gelince tahtada otomatik aç</label>
+
+    <ul id="uploadList" class="uploads"></ul>
+
+    <div class="files-head">
+      <b>Tahtadaki dosyalar</b>
+      <div>
+        <button id="btnOpenFolder" class="mini">Klasörü aç</button>
+        <button id="btnRefreshFiles" class="mini" aria-label="Yenile">↻</button>
+      </div>
+    </div>
+    <ul id="fileList" class="files"></ul>
+    <p id="filesInfo" class="muted small"></p>
+  </section>
+
   <section id="sheetSettings" class="sheet" hidden aria-label="Ayarlar">
     <div class="sheet-handle"></div>
     <h2>Ayarlar</h2>
@@ -181,7 +210,9 @@
     <label class="switch"><input id="haptic" type="checkbox"> Tıklamada titreşim</label>
     <label class="switch"><input id="tapClick" type="checkbox"> Dokunarak tıklama</label>
     <div class="info" id="serverInfo"></div>
+    <button id="btnShowPanel" class="wide">Bağlantı panelini tahtada göster</button>
     <button id="btnLogout" class="wide ghost">PIN'i unut / çıkış</button>
+    <p class="copy">© 2026 <a href="https://github.com/develophasan" target="_blank" rel="noopener">Hasan Özdemir</a>. Tüm hakları saklıdır.</p>
   </section>
 
   <!-- PIN ekranı -->
@@ -192,11 +223,12 @@
       <input id="pinInput" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="12" placeholder="••••">
       <button type="submit" class="wide primary">Bağlan</button>
       <p id="pinErr" class="err" hidden></p>
-      <p class="muted small">PIN'i görmüyorsanız tahtada "Tahta Kumanda Bilgi" kısayolunu açın.</p>
+      <p class="muted small">PIN'i görmüyorsanız tahtada uygulama menüsünden "Tahta Kumanda"yı açın.</p>
+      <p class="copy">© 2026 <a href="https://github.com/develophasan" target="_blank" rel="noopener">Hasan Özdemir</a>. Tüm hakları saklıdır.</p>
     </form>
   </div>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="/static/app.js?v=2"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>
