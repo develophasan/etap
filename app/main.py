@@ -228,7 +228,7 @@ font-family:system-ui,sans-serif;text-align:center}}h1{{font-size:2.6vw;font-wei
 <div class="u">{url}</div><div class="p">PIN: <b>{pin}</b></div><div class="s">Wi-Fi: <b>{ssid}</b></div></div></div>
 <div class="n">Telefon ve tahta aynı Wi-Fi ağında olmalı.{" QR kodu telefon kamerasıyla okutabilirsiniz." if qr else ""}<br>
 iPhone yansıtma: Denetim Merkezi → Ekran Yansıtma → <b>{html.escape(S.cast.name if S.cast else "")}</b></div></div>
-<div class="c">© 2026 <a href="https://github.com/develophasan" target="_blank">Hasan Özdemir</a>. Tüm hakları saklıdır.</div></html>""")
+<div class="c">© 2026 <a href="https://github.com/develophasan" target="_blank">Hasan Özdemir</a></div></html>""")
 
 
 # ---------------------------------------------------------------------- API

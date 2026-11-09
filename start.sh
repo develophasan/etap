@@ -2,13 +2,13 @@
 # Tahta Kumanda sunucusunu başlatır.
 #   ./start.sh              -> ön planda (terminalde loglar görünür)
 #   ./start.sh --arka-plan  -> arka planda başlatıp hemen döner
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 cd "$DIR"
 
-# Ayarları yükle
-if [[ -f "$DIR/ayarlar.env" ]]; then
-  set -a; . "$DIR/ayarlar.env"; set +a
-fi
+# Ayarları yükle: sistem geneli -> program klasörü -> kullanıcı (sonraki öncekini ezer)
+for f in /etc/tahta-kumanda/ayarlar.env "$DIR/ayarlar.env" "${XDG_CONFIG_HOME:-$HOME/.config}/tahta-kumanda/ayarlar.env"; do
+  [[ -f "$f" ]] && { set -a; . "$f"; set +a; }
+done
 export TAHTA_PORT="${TAHTA_PORT:-8000}"
 
 LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tahta-kumanda"

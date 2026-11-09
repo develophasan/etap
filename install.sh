@@ -3,7 +3,7 @@
 # Kullanım:  chmod +x install.sh && ./install.sh     (root olarak DEĞİL, tahtadaki kullanıcıyla)
 set -euo pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 USER_NAME="$(id -un)"
 PORT="${TAHTA_PORT:-8000}"
 

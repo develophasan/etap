@@ -59,6 +59,12 @@ button.tk-primary { background-image: none; background-color: #1f7fe0; color: #f
 """
 
 
+def app_icon() -> str:
+    """Paketle gelen simge kuruluysa onu, değilse sistemdeki genel simgeyi kullan."""
+    theme = Gtk.IconTheme.get_default()
+    return "tahta-kumanda" if theme and theme.has_icon("tahta-kumanda") else "input-tablet"
+
+
 class PanelWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="Tahta Kumanda")
@@ -66,7 +72,7 @@ class PanelWindow(Gtk.ApplicationWindow):
         self.set_default_size(470, -1)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_icon_name("input-tablet")
+        self.set_icon_name(app_icon())
         self.get_style_context().add_class("tk-panel")
         self.connect("delete-event", self._on_close)
 
@@ -149,6 +155,9 @@ class PanelWindow(Gtk.ApplicationWindow):
         bgrid.attach(b_files, 0, 1, 1, 1)
         bgrid.attach(b_pin, 1, 1, 1, 1)
         bgrid.attach(b_restart, 0, 2, 2, 1)
+        self.b_android = self._btn("Android desteğini kur (bir kez, internet gerekir)", self._on_android_setup)
+        self.b_android.set_no_show_all(True)
+        bgrid.attach(self.b_android, 0, 3, 2, 1)
         outer.pack_start(bgrid, False, False, 0)
 
         tip = ("Gizledikten sonra tekrar açmak için: uygulama menüsünden “Tahta Kumanda”"
@@ -162,7 +171,7 @@ class PanelWindow(Gtk.ApplicationWindow):
 
         copy = Gtk.Label(xalign=0.5)
         copy.set_markup('© 2026 <a href="https://github.com/develophasan" title="github.com/develophasan">'
-                        'Hasan Özdemir</a>. Tüm hakları saklıdır.')
+                        'Hasan Özdemir</a>')
         copy.get_style_context().add_class("tk-copy")
         outer.pack_start(copy, False, False, 0)
 
@@ -195,6 +204,27 @@ class PanelWindow(Gtk.ApplicationWindow):
             self.pin.set_text(r.get("pin", ""))
         else:
             self._message("PIN değiştirilemedi", r.get("message", ""))
+        return False
+
+    def _on_android_setup(self, button):
+        button.set_sensitive(False)
+        button.set_label("Android araçları indiriliyor…")
+
+        def work():
+            ok, out = core.install_android_tools()
+            GLib.idle_add(self._after_android_setup, button, ok, out)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _after_android_setup(self, button, ok, out):
+        button.set_sensitive(True)
+        button.set_label("Android desteğini kur (bir kez, internet gerekir)")
+        if ok:
+            button.hide()
+            self._message("Android desteği kuruldu",
+                          "Artık telefondan Ekranımı Yansıt → Android adımlarını kullanabilirsiniz.")
+        else:
+            self._message("Android araçları indirilemedi",
+                          "İnternet bağlantısını kontrol edip tekrar deneyin.\n\n" + out[-600:])
         return False
 
     def _on_restart(self, button):
@@ -237,6 +267,8 @@ class PanelWindow(Gtk.ApplicationWindow):
                     self.qr.show()
                 else:
                     self.qr.hide()
+        andr = ((d or {}).get("cast") or {}).get("android") or {}
+        self.b_android.set_visible(bool(d) and andr.get("scrcpy", False) and not andr.get("adb_ok", True))
         for lbl, (_, text, ok) in zip(self.row_vals, info["rows"]):
             lbl.set_text(text)
             c = lbl.get_style_context()
@@ -310,7 +342,7 @@ class PanelApp(Gtk.Application):
         if not Indicator:
             return
         try:
-            ind = Indicator.Indicator.new("tahta-kumanda", "input-tablet",
+            ind = Indicator.Indicator.new("tahta-kumanda", app_icon(),
                                           Indicator.IndicatorCategory.APPLICATION_STATUS)
             ind.set_status(Indicator.IndicatorStatus.ACTIVE)
             ind.set_title("Tahta Kumanda")

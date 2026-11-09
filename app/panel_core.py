@@ -32,8 +32,15 @@ def read_env_file(path: Path) -> dict:
     return out
 
 
+def settings_files():
+    cfg = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "tahta-kumanda"
+    return [Path("/etc/tahta-kumanda/ayarlar.env"), BASE_DIR / "ayarlar.env", cfg / "ayarlar.env"]
+
+
 def settings() -> dict:
-    s = read_env_file(BASE_DIR / "ayarlar.env")
+    s = {}
+    for f in settings_files():
+        s.update(read_env_file(f))
     for k in ("TAHTA_PORT", "TAHTA_ADI"):
         if os.environ.get(k):
             s[k] = os.environ[k]
@@ -85,6 +92,16 @@ def stop_server():
                    stderr=subprocess.DEVNULL)
 
 
+def install_android_tools():
+    """android-araclari.sh ile güncel adb'yi indirir. (başarılı mı, çıktı)"""
+    try:
+        r = subprocess.run([str(BASE_DIR / "android-araclari.sh")], capture_output=True, text=True,
+                           timeout=300)
+        return r.returncode == 0, (r.stdout + r.stderr).strip()
+    except (OSError, subprocess.SubprocessError) as ex:
+        return False, str(ex)
+
+
 def open_path(target: str):
     exe = shutil.which("xdg-open")
     if exe:
@@ -130,7 +147,8 @@ def describe(d) -> dict:
          bool(air.get("running"))),
         ("Android yansıtma",
          f"Yansıtılıyor ({andr.get('serial')})" if andr.get("running")
-         else ("Hazır" if andr.get("available") else "Kurulu değil"),
+         else ("Hazır" if andr.get("available")
+               else ("scrcpy kurulu değil" if not andr.get("scrcpy") else "Android desteği kurulmalı (aşağıdaki düğme)")),
          bool(andr.get("available"))),
     ]
     return {"state": state, "headline": headline, "rows": rows}

@@ -19,6 +19,7 @@ import os
 import re
 import shlex
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -57,8 +58,11 @@ class CastManager:
         self.name = os.environ.get("TAHTA_ADI", "Akıllı Tahta")
         self.uxplay = shutil.which("uxplay")
         self.scrcpy = shutil.which("scrcpy")
-        bundled_adb = base_dir / "tools" / "platform-tools" / "adb"
-        self.adb = str(bundled_adb) if bundled_adb.exists() else shutil.which("adb")
+        self.base_dir = base_dir
+        self._adb_versions = {}
+        self.adb = None
+        self.adb_version = None
+        self.refresh_adb()
 
         self._ux_proc = None
         self._ux_task = None
@@ -134,9 +138,49 @@ class CastManager:
             return 124, "zaman aşımı"
         return proc.returncode, out.decode(errors="replace").strip()
 
+    # ------------------------------------------------------------- adb bulma
+    def _adb_candidates(self):
+        user = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+        cands = [self.base_dir / "tools" / "platform-tools" / "adb",
+                 user / "tahta-kumanda" / "platform-tools" / "adb"]
+        sys_adb = shutil.which("adb")
+        if sys_adb:
+            cands.append(Path(sys_adb))
+        return [str(c) for c in cands if c.is_file() and os.access(c, os.X_OK)]
+
+    def _version_of(self, path: str):
+        if path not in self._adb_versions:
+            ver = None
+            try:
+                out = subprocess.run([path, "version"], capture_output=True, text=True, timeout=5).stdout
+                m = re.search(r"^Version (\d+)", out, re.M)
+                ver = int(m.group(1)) if m else None
+            except (OSError, subprocess.SubprocessError):
+                pass
+            self._adb_versions[path] = ver
+        return self._adb_versions[path]
+
+    def refresh_adb(self):
+        """Kablosuz eşleştirme (adb pair) için adb 30 ve üstü gerekir; en uygununu seç."""
+        best = None
+        for c in self._adb_candidates():
+            v = self._version_of(c)
+            if best is None or (v or 0) > (best[1] or 0):
+                best = (c, v)
+            if v and v >= 30:
+                best = (c, v)
+                break
+        self.adb, self.adb_version = best if best else (None, None)
+
+    @property
+    def adb_ok(self) -> bool:
+        return bool(self.adb and self.adb_version and self.adb_version >= 30)
+
     def _check_android_tools(self):
-        if not self.adb:
-            return "adb bulunamadı (install.sh platform-tools'u indirir)"
+        self.refresh_adb()
+        if not self.adb_ok:
+            return ("Android için güncel adb aracı gerekli. Tahtadaki Tahta Kumanda panelinde "
+                    "'Android desteğini kur' düğmesine basın (bir kez, internet gerekir).")
         if not self.scrcpy:
             return "scrcpy kurulu değil (sudo apt install scrcpy)"
         return None
@@ -246,7 +290,9 @@ class CastManager:
                 "name": self.name,
             },
             "android": {
-                "available": bool(self.adb and self.scrcpy),
+                "available": bool(self.adb_ok and self.scrcpy),
+                "adb_ok": self.adb_ok,
+                "scrcpy": bool(self.scrcpy),
                 "running": sc_running,
                 "serial": self._sc_serial,
             },

@@ -12,6 +12,13 @@ Pardus (Debian 12 tabanlı) akıllı tahtayı, aynı Wi-Fi'deki telefondan **uyg
 - **Masaüstü paneli**: tahta açılınca adres, PIN, Wi-Fi adı ve QR kodu gösteren, gizlenip
   yeniden açılabilen pencere.
 
+<p align="center">
+  <img src="docs/ekran/2-trackpad.png" width="200" alt="Trackpad">
+  <img src="docs/ekran/3-dosyalar.png" width="200" alt="Dosya aktarımı">
+  <img src="docs/ekran/4-sunum.png" width="200" alt="Sunum kumandası">
+  <img src="docs/ekran/5-yansit.png" width="200" alt="Ekran yansıtma">
+</p>
+
 ## Mimari ve teknik tercihler
 
 ```
@@ -37,6 +44,23 @@ Pardus (Debian 12 tabanlı) akıllı tahtayı, aynı Wi-Fi'deki telefondan **uyg
 | getDisplayMedia (WebRTC) | **Kullanılmadı** | Android Chrome ve iOS Safari'de ekran paylaşımı API'si yok; ayrıca HTTPS ister. Telefondan tarayıcı ile yansıtma bu nedenle mümkün değil. |
 
 ## 1. Kurulum
+
+### a) Paketle kurulum (önerilen)
+
+[Sürümler (Releases)](https://github.com/develophasan/etap/releases) sayfasından
+`tahta-kumanda_<sürüm>_all.deb` dosyasını indirip çift tıklayın (Pardus Paket Yükleyici açılır)
+ya da terminalde:
+
+```bash
+sudo apt install ./tahta-kumanda_1.0.0_all.deb
+```
+
+Kurulumdan sonra oturumu kapatıp açın: panel her oturumda kendiliğinden açılır. Uygulama
+menüsünde **"Tahta Kumanda"** olarak da bulunur. Ayarlar: `/etc/tahta-kumanda/ayarlar.env`.
+
+Paketi kaynak koddan üretmek için: `./paketle.sh` → `dist/` klasörü.
+
+### b) Kaynak koddan kurulum (install.sh)
 
 ```bash
 # Klasörü tahtaya kopyalayın (ör. ~/tahta-kumanda), sonra tahtadaki kullanıcıyla:
@@ -69,7 +93,11 @@ sudo apt install python3 python3-venv python3-pip python3-evdev \
 
 ```
 tahta-kumanda/
-├── install.sh            # tek seferlik kurulum
+├── install.sh            # kaynak koddan kurulum
+├── paketle.sh            # .deb paketi üretir (dist/)
+├── android-araclari.sh   # Android yansıtma için güncel adb'yi indirir
+├── VERSION, debian-changelog, LICENSE (GPLv3)
+├── data/tahta-kumanda.svg  # uygulama simgesi
 ├── panel.sh              # masaüstü panelini açar (otomatik başlatma bunu çağırır)
 ├── start.sh              # yalnızca sunucuyu başlatır (panel bunu kullanır)
 ├── bilgi.sh              # tahtada adres + PIN'i tam ekran gösterir
@@ -89,7 +117,7 @@ tahta-kumanda/
 │   ├── index.html        # telefon arayüzü
 │   ├── style.css
 │   └── app.js            # trackpad (touchstart/move/end), klavye, dosyalar, paneller
-└── tools/platform-tools/ # install.sh indirir (adb)
+└── tools/platform-tools/ # install.sh indirir (adb, yalnızca kaynak koddan kurulumda)
 ```
 
 ## 3. Kullanım
@@ -128,6 +156,10 @@ Telefonda: **Denetim Merkezi → Ekran Yansıtma → "Akıllı Tahta"**. Görün
 ses de tahtadan çıkar. Durdurmak için aynı menüden "Yansıtmayı Durdur".
 
 ### Android (scrcpy, Wi-Fi ADB)
+Tahtada **bir kez**: panelde **"Android desteğini kur"** düğmesine basın (internet gerekir). Pardus 23
+deposundaki adb, kablosuz eşleştirmeyi desteklemeyen eski bir sürüm olduğu için güncel adb Google'dan
+kullanıcı klasörüne indirilir. scrcpy tahtada kurulu değilse bu özellik görünmez.
+
 Telefon başına **bir kez** eşleştirme:
 1. Ayarlar → Telefon hakkında → *Yapım numarası*'na 7 kez dokunun.
 2. Geliştirici seçenekleri → **Kablosuz hata ayıklama**'yı açın.
@@ -175,4 +207,4 @@ belirlenen klasöre yazılır ve oradan okunur; dosya adlarıyla klasör dışı
 
 ---
 
-© 2026 [Hasan Özdemir](https://github.com/develophasan). Tüm hakları saklıdır.
+© 2026 [Hasan Özdemir](https://github.com/develophasan) · Lisans: [GPLv3](LICENSE)

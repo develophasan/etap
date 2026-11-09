@@ -425,7 +425,11 @@
       else { as.textContent = "AirPlay alıcısı başlatılıyor…"; as.className = "state"; }
 
       const ds = $("#androidState");
-      if (!d.available) { ds.textContent = "scrcpy/adb kurulu değil (install.sh'i çalıştırın)"; ds.className = "state bad"; }
+      if (!d.available) {
+        ds.textContent = d.scrcpy === false ? "scrcpy tahtada kurulu değil"
+          : "Tahtadaki Tahta Kumanda panelinde \"Android desteğini kur\" düğmesine bir kez basın";
+        ds.className = "state bad";
+      }
       else if (d.running) { ds.textContent = `● Yansıtılıyor (${d.serial})`; ds.className = "state ok"; }
       else { ds.textContent = "Hazır — yansıtma kapalı"; ds.className = "state"; }
       $("#pairBox").open = !store.get("paired", false);

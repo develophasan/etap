@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fa2ff"/>
+      <stop offset="1" stop-color="#1663c7"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#bg)"/>
+  <!-- tahta -->
+  <rect x="20" y="26" width="78" height="52" rx="6" fill="#ffffff"/>
+  <rect x="26" y="32" width="66" height="40" rx="3" fill="#dcebff"/>
+  <rect x="52" y="78" width="14" height="10" fill="#ffffff"/>
+  <rect x="40" y="87" width="38" height="5" rx="2.5" fill="#ffffff"/>
+  <!-- imleç -->
+  <path d="M44 40 L44 62 L50 56 L54 65 L58 63 L54 54 L62 54 Z" fill="#11151c"/>
+  <!-- telefon -->
+  <rect x="78" y="56" width="32" height="54" rx="7" fill="#11151c"/>
+  <rect x="82" y="62" width="24" height="40" rx="3" fill="#7cc4ff"/>
+  <circle cx="94" cy="106" r="2" fill="#7cc4ff"/>
+  <!-- sinyal -->
+  <path d="M100 46 a12 12 0 0 1 12 12" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <path d="M100 36 a22 22 0 0 1 22 22" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+</svg>

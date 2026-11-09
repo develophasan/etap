@@ -3,9 +3,12 @@
 # Panel zaten açıksa gizlenmiş pencereyi yeniden gösterir.
 #   ./panel.sh           -> paneli göster
 #   ./panel.sh --gizli   -> arka planda başlat, pencere açma
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 cd "$DIR"
-[[ -f "$DIR/ayarlar.env" ]] && { set -a; . "$DIR/ayarlar.env"; set +a; }
+# Ayarları yükle: sistem geneli -> program klasörü -> kullanıcı (sonraki öncekini ezer)
+for f in /etc/tahta-kumanda/ayarlar.env "$DIR/ayarlar.env" "${XDG_CONFIG_HOME:-$HOME/.config}/tahta-kumanda/ayarlar.env"; do
+  [[ -f "$f" ]] && { set -a; . "$f"; set +a; }
+done
 
 if /usr/bin/python3 -c 'import gi; gi.require_version("Gtk", "3.0"); from gi.repository import Gtk' 2>/dev/null; then
   exec /usr/bin/python3 "$DIR/app/panel.py" "$@"
